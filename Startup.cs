@@ -4,6 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WebApi.Helpers;
 using WebApi.Services;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+using AutoMapper;
 
 namespace WebApi
 {
@@ -23,15 +26,43 @@ namespace WebApi
             services.AddControllers();
 
             // configure strongly typed settings object
-            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
-
+            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));            
+            services.Configure<AccommodDatabaseSettings>(Configuration.GetSection(nameof(AccommodDatabaseSettings)));
+            services.AddSingleton<IAccommodDatabaseSettings>(sp =>
+                sp.GetRequiredService<IOptions<AccommodDatabaseSettings>>()
+                .Value
+            );
+           
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IPostService, PostService>();
+
+            // swagger
+            services.AddSwaggerGen();
+
+            // serialize
+            services.AddControllersWithViews()
+                .AddNewtonsoftJson(options =>
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+            // auto mapper
+            var mapperConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+            IMapper mapper = mapperConfig.CreateMapper();
+            services.AddSingleton(mapper);
+
         }
 
         // configure the HTTP request pipeline
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("v1/swagger.json", "My API V1");
+            });
             app.UseRouting();
 
             // global cors policy
@@ -43,7 +74,10 @@ namespace WebApi
             // custom jwt auth middleware
             app.UseMiddleware<JwtMiddleware>();
 
-            app.UseEndpoints(x => x.MapControllers());
+            app.UseEndpoints(endpoint =>
+            {
+                endpoint.MapControllers();
+            });
         }
     }
 }

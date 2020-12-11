@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using WebApi.Models;
 using WebApi.Services;
 
@@ -18,12 +19,29 @@ namespace WebApi.Controllers
         [HttpPost("authenticate")]
         public IActionResult Authenticate(AuthenticateRequest model)
         {
-            var response = _userService.Authenticate(model);
+            try
+            {
+                var response = _userService.Authenticate(model);
+                return Ok(response);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(401, e.Message);
+            }
+        }
 
-            if (response == null)
-                return BadRequest(new { message = "Username or password is incorrect" });
-
-            return Ok(response);
+        [HttpPost("signin")]
+        public IActionResult SignIn(SignInRequest model)
+        {
+            try
+            {
+                var response = _userService.SignIn(model);
+                return Ok(response);
+            }
+            catch(Exception e)
+            {
+                return StatusCode(401, e.Message);
+            }
         }
 
         [Authorize]
@@ -32,6 +50,14 @@ namespace WebApi.Controllers
         {
             var users = _userService.GetAll();
             return Ok(users);
+        }
+
+        [Authorize]
+        [HttpGet("{id}")]
+        public IActionResult Get([FromRoute] string id)
+        {
+            var user = _userService.GetById(id);
+            return Ok(user);
         }
     }
 }
