@@ -54,13 +54,14 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Role.Admin, Role.Host)]
         [HttpPost]
         public async Task<IActionResult> CreateOrUpdate(CreateOrUpdatePostDto input)
         {
+            var host = (User)HttpContext.Items["User"];
             try
             {
-                var result = await _postService.CreateOrUpdate(input);
+                var result = await _postService.CreateOrUpdate(input, host.Id);
                 return Ok(result);
             }
             catch (KeyNotFoundException e)
@@ -73,7 +74,7 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Role.Admin, Role.Host)]
         [HttpDelete("{id}")]        
         public async Task<IActionResult> Delete([FromRoute]string id)
         {
@@ -91,7 +92,7 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Role.Admin)]
         [HttpPut("{id}/approve")]
         public async Task<IActionResult> Approve([FromRoute] string id)
         {
@@ -113,7 +114,7 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Role.Admin)]
         [HttpPut("{id}/reject")]
         public async Task<IActionResult> Reject([FromRoute] string id)
         {

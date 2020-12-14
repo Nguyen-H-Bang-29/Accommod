@@ -27,12 +27,12 @@ namespace WebApi.Helpers
             var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token != null)
-                attachUserToContext(context, userService, token);
+                AttachUserToContext(context, userService, token);
 
             await _next(context);
         }
 
-        private void attachUserToContext(HttpContext context, IUserService userService, string token)
+        private void AttachUserToContext(HttpContext context, IUserService userService, string token)
         {
             try
             {
@@ -50,9 +50,10 @@ namespace WebApi.Helpers
 
                 var jwtToken = (JwtSecurityToken)validatedToken;
                 var userId = jwtToken.Claims.First(x => x.Type == "id").Value;
-
+                var role = jwtToken.Claims.First(x => x.Type == "role").Value;
                 // attach user to context on successful jwt validation
                 context.Items["User"] = userService.GetById(userId);
+                context.Items["Role"] = role;
             }
             catch
             {

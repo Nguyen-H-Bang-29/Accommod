@@ -26,7 +26,7 @@ namespace WebApi.Services
     public class UserService : IUserService
     {
         // users hardcoded for simplicity, store in a db with hashed passwords in production applications
-        private readonly IMongoCollection<User> _users;
+        private readonly IMongoCollection<User> _users; 
 
         private readonly AppSettings _appSettings;
 
@@ -37,8 +37,8 @@ namespace WebApi.Services
             var client = new MongoClient(dbSettings.ConnectionString);
             var database = client.GetDatabase(dbSettings.DatabaseName);
 
-            _users = database.GetCollection<User>(dbSettings.UsersCollectionName);
-        }
+            _users = Util.GetCollection<User>(database, dbSettings.UsersCollectionName);
+        } 
 
         public AuthenticateResponse SignIn(SignInRequest model)
         {
@@ -51,10 +51,11 @@ namespace WebApi.Services
                 LastName = model.LastName,
                 Username = model.Username,
                 Password = Util.GetHashString(mySHA256.ComputeHash(Encoding.ASCII.GetBytes(model.Password))),
+                Role = model.Role,
                 CreatedTime = DateTime.UtcNow
             };
             _users.InsertOne(user);
-            var token = generateJwtToken(user);
+            var token = GenerateJwtToken(user);
             return new AuthenticateResponse(user, token);
         }
 
@@ -68,7 +69,7 @@ namespace WebApi.Services
             if (user == null) throw new Exception(message: "Tên đăng nhập hoặc mật khẩu không chính xác");
 
             // authentication successful so generate jwt token
-            var token = generateJwtToken(user);
+            var token = GenerateJwtToken(user);
 
             return new AuthenticateResponse(user, token);
 
@@ -86,14 +87,17 @@ namespace WebApi.Services
 
         // helper methods
 
-        private string generateJwtToken(User user)
+        private string GenerateJwtToken(User user)
         {
             // generate token that is valid for 7 days
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()) }),
+                Subject = new ClaimsIdentity(new[] {
+                    new Claim("id", user.Id.ToString()), 
+                    new Claim("role", user.Role) }
+                ),
                 Expires = DateTime.UtcNow.AddDays(7),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };

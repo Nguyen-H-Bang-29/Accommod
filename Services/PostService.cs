@@ -14,7 +14,7 @@ namespace WebApi.Services
     public interface IPostService
     {
         public Task<List<GetPostDto>> GetAll();
-        public Task<GetPostDto> CreateOrUpdate(CreateOrUpdatePostDto input);
+        public Task<GetPostDto> CreateOrUpdate(CreateOrUpdatePostDto input, string hostId);
         public Task<GetPostDto> GetById(string id);
         public Task<GetPostDto> Delete(string id);
         public Task<GetPostDto> Approve(string id);
@@ -24,6 +24,7 @@ namespace WebApi.Services
     {
         private readonly IMapper _mapper;
         private readonly IMongoCollection<Post> _posts;
+        private readonly IMongoCollection<User> _users;
         public PostService(IAccommodDatabaseSettings settings, IMapper mapper)
         {
             _mapper = mapper;
@@ -31,7 +32,8 @@ namespace WebApi.Services
             var client = new MongoClient(settings.ConnectionString);
             var database = client.GetDatabase(settings.DatabaseName);
 
-            _posts = database.GetCollection<Post>(settings.PostsCollectionName);
+            _posts = Util.GetCollection<Post>(database, settings.PostsCollectionName);
+            _users = Util.GetCollection<User>(database, settings.UsersCollectionName);
         }
 
         public async Task<List<GetPostDto>> GetAll()
@@ -48,14 +50,14 @@ namespace WebApi.Services
             return _mapper.Map<GetPostDto>(post);
         }
 
-        public async Task<GetPostDto> CreateOrUpdate(CreateOrUpdatePostDto input)
-        {
+        public async Task<GetPostDto> CreateOrUpdate(CreateOrUpdatePostDto input, string hostId)
+        {            
             Post post = new Post()
             {
                 Id = input.Id,
                 Caption = input.Caption,
-                HostId = input.HostId,
-                Status = PostStatus.Pending
+                HostId = hostId,
+                Status = _users.AsQueryable().FirstOrDefault(u => u.Id == hostId).Role == Role.Admin ? PostStatus.Available : PostStatus.Pending
             };
             if (input.Id == null || input.Id == "")
             {
@@ -67,7 +69,7 @@ namespace WebApi.Services
                 var filter = Builders<Post>.Filter.Eq("Id", post.Id);
                 post = await _posts.FindOneAndReplaceAsync(filter, post);
                 if (post == null) throw new KeyNotFoundException("Không tồn tại bản ghi với Id được cung cấp");
-            }
+            }            
             return _mapper.Map<GetPostDto>(post);
         }
 
@@ -94,10 +96,10 @@ namespace WebApi.Services
         private async Task<GetPostDto> UpdateStatus(string id, PostStatus status)
         {
             var post = _posts.AsQueryable().FirstOrDefault(x => x.Id == id);
-            if (post == null) 
+            if (post == null)
                 throw new KeyNotFoundException("Không tồn tại bản ghi với Id được cung cấp");
             if (post.Status != PostStatus.Pending)
-                throw new InvalidOperationException("Không thể thay đổi trạng thái bài viết sau khi đã duyệt");
+                throw new InvalidOperationException("Không thể thay đổi trạng thái bài viết sau khi đã duyệt/từ chối");
 
             var filter = Builders<Post>.Filter.Eq("Id", id);
             var update = Builders<Post>.Update.Set("Status", status);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using WebApi.Entities;
 using WebApi.Models;
 using WebApi.Services;
 
@@ -44,7 +45,7 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Role.Admin)]
         [HttpGet]
         public IActionResult GetAll()
         {
@@ -52,7 +53,7 @@ namespace WebApi.Controllers
             return Ok(users);
         }
 
-        [Authorize]
+        [Authorize(Role.Admin)]
         [HttpGet("{id}")]
         public IActionResult Get([FromRoute] string id)
         {

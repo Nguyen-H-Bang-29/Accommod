@@ -13,7 +13,6 @@ namespace WebApi.Dtos
         [AllowNull]
         public string Id;
         public string Caption;
-        public string HostId;
     }
     public class GetPostDto
     {
