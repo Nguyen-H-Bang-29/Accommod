@@ -13,6 +13,7 @@ namespace WebApi.Helpers
         public MappingProfile()
         {
             CreateMap<Post, GetPostDto>();
+            CreateMap<Review, GetReviewDto>();
         }
     }
 }

@@ -15,10 +15,15 @@ namespace WebApi.Controllers
     public class PostsController : ControllerBase
     {
         private readonly IPostService _postService;
-        public PostsController(IPostService postService)
+        private readonly IReviewService _reviewService;
+
+        public PostsController(IPostService postService, IReviewService reviewService)
         {
             _postService = postService;
+            _reviewService = reviewService;
         }
+
+        #region Host
 
         [Authorize]
         [HttpGet]
@@ -59,6 +64,7 @@ namespace WebApi.Controllers
         public async Task<IActionResult> CreateOrUpdate(CreateOrUpdatePostDto input)
         {
             var host = (User)HttpContext.Items["User"];
+
             try
             {
                 var result = await _postService.CreateOrUpdate(input, host.Id);
@@ -91,6 +97,10 @@ namespace WebApi.Controllers
                 return StatusCode(500, e.Message);
             }
         }
+
+        #endregion
+
+        #region Admin
 
         [Authorize(Role.Admin)]
         [HttpPut("{id}/approve")]
@@ -135,6 +145,162 @@ namespace WebApi.Controllers
                 return StatusCode(500, e.Message);
             }
         }
-    
+
+        #endregion
+
+        #region Renter
+
+        [Authorize(Role.Renter)]
+        [HttpPost("{id}/view")]
+        public async Task<IActionResult> View([FromRoute] string id)
+        {
+            var host = (User)HttpContext.Items["User"];
+            try
+            {
+                return Ok(await _reviewService.View(id, host.Id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpPost("{id}/rating")]
+        public async Task<IActionResult> Rate([FromRoute] string id, [FromQuery] int rating )
+        {
+            var host = (User)HttpContext.Items["User"];
+
+            try
+            {
+                return Ok(await _reviewService.Rate(id, host.Id, rating));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpPost("{id}/report")]
+        public async Task<IActionResult> Report([FromRoute] string id)
+        {
+            var host = (User)HttpContext.Items["User"];
+
+            try
+            {
+                return Ok(await _reviewService.Report(id, host.Id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpPost("{id}/comment")]
+        public async Task<IActionResult> Comment([FromRoute] string id, [FromBody] dynamic body)
+        {
+            var host = (User)HttpContext.Items["User"];
+
+            try
+            {
+                return Ok(await _reviewService.Comment(id, host.Id, body.content.ToString()));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpGet("{id}/view")]
+        public async Task<IActionResult> GetViews([FromRoute] string id)
+        {
+            try
+            {
+                return Ok(await _reviewService.GetViews(id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpGet("{id}/rating")]
+        public async Task<IActionResult> GetRating([FromRoute] string id)
+        {
+            try
+            {
+                return Ok(await _reviewService.GetRating(id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpGet("{id}/report")]
+        public async Task<IActionResult> GetReports([FromRoute] string id)
+        {
+            try
+            {
+                return Ok(await _reviewService.GetRating(id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpGet("{id}/comment")]
+        public async Task<IActionResult> GetComments([FromRoute] string id)
+        {
+            try
+            {
+                return Ok(await _reviewService.GetComments(id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        #endregion
     }
 }

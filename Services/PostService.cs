@@ -13,6 +13,7 @@ namespace WebApi.Services
 {
     public interface IPostService
     {
+        // CRUDAR
         public Task<List<GetPostDto>> GetAll();
         public Task<GetPostDto> CreateOrUpdate(CreateOrUpdatePostDto input, string hostId);
         public Task<GetPostDto> GetById(string id);
@@ -21,10 +22,11 @@ namespace WebApi.Services
         public Task<GetPostDto> Reject(string id);
     }
     public class PostService : IPostService
-    {
+    {        
         private readonly IMapper _mapper;
         private readonly IMongoCollection<Post> _posts;
         private readonly IMongoCollection<User> _users;
+        private readonly IMongoCollection<Review> _reviews;
         public PostService(IAccommodDatabaseSettings settings, IMapper mapper)
         {
             _mapper = mapper;
@@ -34,8 +36,10 @@ namespace WebApi.Services
 
             _posts = Util.GetCollection<Post>(database, settings.PostsCollectionName);
             _users = Util.GetCollection<User>(database, settings.UsersCollectionName);
+            _reviews = Util.GetCollection<Review>(database, settings.ReviewsCollectionName);
         }
 
+        #region CRUDAR
         public async Task<List<GetPostDto>> GetAll()
         {
             var posts = await (await _posts.FindAsync(_ => true)).ToListAsync();
@@ -90,8 +94,9 @@ namespace WebApi.Services
         {
             return await UpdateStatus(id, PostStatus.Rejected);
         }
+        #endregion    
 
-        //helpers 
+        #region helpers
 
         private async Task<GetPostDto> UpdateStatus(string id, PostStatus status)
         {
@@ -108,5 +113,8 @@ namespace WebApi.Services
             post = _posts.AsQueryable().FirstOrDefault(x => x.Id == id);
             return _mapper.Map<GetPostDto>(post);
         }
+
+        #endregion
+
     }
 }

@@ -7,6 +7,7 @@ using WebApi.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 using AutoMapper;
+using WebApi.Entities;
 
 namespace WebApi
 {
@@ -36,6 +37,7 @@ namespace WebApi
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
+            services.AddScoped<IReviewService, ReviewService>();
 
             // swagger
             services.AddSwaggerGen();
