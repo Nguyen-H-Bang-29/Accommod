@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Swashbuckle.AspNetCore;
 using WebApi.Helpers;
 using WebApi.Services;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 using AutoMapper;
 using WebApi.Entities;
 
@@ -23,21 +23,24 @@ namespace WebApi
         // add services to the DI container
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvcCore().AddApiExplorer().AddDataAnnotations();
+            services.AddSwaggerGenNewtonsoftSupport();
             services.AddCors();
             services.AddControllers();
 
             // configure strongly typed settings object
-            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));            
+            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
             services.Configure<AccommodDatabaseSettings>(Configuration.GetSection(nameof(AccommodDatabaseSettings)));
             services.AddSingleton<IAccommodDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<AccommodDatabaseSettings>>()
                 .Value
             );
-           
+
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IReviewService, ReviewService>();
+            services.AddScoped<ILocationService, LocationService>();
 
             // swagger
             services.AddSwaggerGen();

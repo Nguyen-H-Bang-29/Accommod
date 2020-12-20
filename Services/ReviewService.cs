@@ -18,9 +18,9 @@ namespace WebApi.Services
         public Task<GetReviewDto> Rate(string postId, string userId, int star);
         public Task<GetReviewDto> Report(string postId, string userId);
         public Task<GetReviewDto> Comment(string postId, string userId, string content);
-        public Task<double> GetRating(string postId);
-        public Task<int> GetViews(string postId);
-        public Task<int> GetReports(string postId);
+        public double GetRating(string postId);
+        public int GetViews(string postId);
+        public int GetReports(string postId);
         public Task<List<Comment>> GetComments(string postId);
     }
     public class ReviewService : IReviewService
@@ -43,15 +43,16 @@ namespace WebApi.Services
 
         #region CRUD
 
-        public async Task<double> GetRating(string postId)
+        public double GetRating(string postId)
         {
             if (_posts.AsQueryable().FirstOrDefault(p => p.Id == postId) == null) throw new KeyNotFoundException("Không tìm thấy bài đăng");
-            return _reviews.AsQueryable()
-                .Where(r => r.PostId == postId && Enumerable.Range(1, 5).Contains(r.Rating))
-                .Average(r => r.Rating);
+            var reviews = _reviews.AsQueryable()
+                .Where(r => r.PostId == postId && Enumerable.Range(1, 5).Contains(r.Rating));
+            if (reviews.Count() == 0) return 0;
+            return reviews.Average(r => r.Rating);
         }
 
-        public async Task<int> GetViews(string postId)
+        public int GetViews(string postId)
         {
             if (_posts.AsQueryable().FirstOrDefault(p => p.Id == postId) == null) throw new KeyNotFoundException("Không tìm thấy bài đăng");
             return _reviews.AsQueryable()
@@ -59,7 +60,7 @@ namespace WebApi.Services
                 .Count();
         }
 
-        public async Task<int> GetReports(string postId)
+        public int GetReports(string postId)
         {
             if (_posts.AsQueryable().FirstOrDefault(p => p.Id == postId) == null) throw new KeyNotFoundException("Không tìm thấy bài đăng");
             return _reviews.AsQueryable()

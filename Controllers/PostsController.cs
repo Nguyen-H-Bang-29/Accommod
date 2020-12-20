@@ -27,6 +27,8 @@ namespace WebApi.Controllers
 
         [Authorize]
         [HttpGet]
+        [ProducesResponseType(typeof(List<GetPostDto>), 200)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -42,6 +44,9 @@ namespace WebApi.Controllers
 
         [Authorize]
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(GetPostDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Get([FromRoute] string id)
         {
             try
@@ -61,6 +66,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Admin, Role.Host)]
         [HttpPost]
+        [ProducesResponseType(typeof(GetPostDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> CreateOrUpdate(CreateOrUpdatePostDto input)
         {
             var host = (User)HttpContext.Items["User"];
@@ -81,7 +89,10 @@ namespace WebApi.Controllers
         }
 
         [Authorize(Role.Admin, Role.Host)]
-        [HttpDelete("{id}")]        
+        [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(GetPostDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Delete([FromRoute]string id)
         {
             try
@@ -104,6 +115,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Admin)]
         [HttpPut("{id}/approve")]
+        [ProducesResponseType(typeof(GetPostDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Approve([FromRoute] string id)
         {
             try
@@ -126,6 +140,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Admin)]
         [HttpPut("{id}/reject")]
+        [ProducesResponseType(typeof(GetPostDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Reject([FromRoute] string id)
         {
             try
@@ -152,6 +169,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpPost("{id}/view")]
+        [ProducesResponseType(typeof(GetReviewDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> View([FromRoute] string id)
         {
             var host = (User)HttpContext.Items["User"];
@@ -171,6 +191,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpPost("{id}/rating")]
+        [ProducesResponseType(typeof(GetReviewDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Rate([FromRoute] string id, [FromQuery] int rating )
         {
             var host = (User)HttpContext.Items["User"];
@@ -191,6 +214,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpPost("{id}/report")]
+        [ProducesResponseType(typeof(GetReviewDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Report([FromRoute] string id)
         {
             var host = (User)HttpContext.Items["User"];
@@ -211,6 +237,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpPost("{id}/comment")]
+        [ProducesResponseType(typeof(GetReviewDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Comment([FromRoute] string id, [FromBody] dynamic body)
         {
             var host = (User)HttpContext.Items["User"];
@@ -231,11 +260,14 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpGet("{id}/view")]
+        [ProducesResponseType(typeof(int), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> GetViews([FromRoute] string id)
         {
             try
             {
-                return Ok(await _reviewService.GetViews(id));
+                return Ok(_reviewService.GetViews(id));
             }
             catch (KeyNotFoundException e)
             {
@@ -249,11 +281,14 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpGet("{id}/rating")]
+        [ProducesResponseType(typeof(double), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> GetRating([FromRoute] string id)
         {
             try
             {
-                return Ok(await _reviewService.GetRating(id));
+                return Ok(_reviewService.GetRating(id));
             }
             catch (KeyNotFoundException e)
             {
@@ -267,11 +302,14 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpGet("{id}/report")]
+        [ProducesResponseType(typeof(int), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> GetReports([FromRoute] string id)
         {
             try
             {
-                return Ok(await _reviewService.GetRating(id));
+                return Ok(_reviewService.GetReports(id));
             }
             catch (KeyNotFoundException e)
             {
@@ -285,6 +323,9 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Renter)]
         [HttpGet("{id}/comment")]
+        [ProducesResponseType(typeof(List<Comment>), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> GetComments([FromRoute] string id)
         {
             try
@@ -294,6 +335,28 @@ namespace WebApi.Controllers
             catch (KeyNotFoundException e)
             {
                 return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        #endregion
+
+        #region Shared
+
+        [HttpPost("search")]
+        [Authorize]
+        [ProducesResponseType(typeof(SearchResultPostDto), 200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Search([FromBody]SearchPostDto searchParam)
+        {
+            string role = HttpContext.Items["Role"].ToString();
+            var user = (User)HttpContext.Items["User"];
+            try
+            {
+                return Ok(await _postService.Search(searchParam, role, user.Id));
             }
             catch (Exception e)
             {

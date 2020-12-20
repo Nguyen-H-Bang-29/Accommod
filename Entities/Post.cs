@@ -17,5 +17,8 @@ namespace WebApi.Entities
         public string Caption { get; set; }
         public string HostId { get; set; }
         public PostStatus Status { get; set; }
+        public string WardCode { get; set; }
+        public string Address { get; set; }
+        public long Rent { get; set; }
     }
 }

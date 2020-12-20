@@ -19,7 +19,7 @@ namespace WebApi.Services
     {
         AuthenticateResponse Authenticate(AuthenticateRequest model);
         AuthenticateResponse SignIn(SignInRequest model);
-        IEnumerable<User> GetAll();
+        List<User> GetAll();
         User GetById(string id);
     }
 
@@ -75,9 +75,9 @@ namespace WebApi.Services
 
         }
 
-        public IEnumerable<User> GetAll()
+        public List<User> GetAll()
         {
-            return _users.Find(_ => true).ToEnumerable();
+            return _users.Find(_ => true).ToList();
         }
 
         public User GetById(string id)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using WebApi.Entities;
 using WebApi.Models;
 using WebApi.Services;
@@ -18,6 +19,8 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("authenticate")]
+        [ProducesResponseType(typeof(AuthenticateResponse), 200)]
+        [ProducesResponseType(401)]
         public IActionResult Authenticate(AuthenticateRequest model)
         {
             try
@@ -32,6 +35,8 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("signin")]
+        [ProducesResponseType(typeof(AuthenticateResponse), 200)]
+        [ProducesResponseType(401)]
         public IActionResult SignIn(SignInRequest model)
         {
             try
@@ -47,6 +52,7 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Admin)]
         [HttpGet]
+        [ProducesResponseType(typeof(List<User>), 200)]
         public IActionResult GetAll()
         {
             var users = _userService.GetAll();
@@ -55,6 +61,7 @@ namespace WebApi.Controllers
 
         [Authorize(Role.Admin)]
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(List<User>), 200)]
         public IActionResult Get([FromRoute] string id)
         {
             var user = _userService.GetById(id);

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebApi.Dtos;
 using WebApi.Entities;
+using WebApi.Services;
 
 namespace WebApi.Helpers
 {

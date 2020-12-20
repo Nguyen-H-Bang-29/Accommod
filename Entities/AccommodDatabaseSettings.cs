@@ -10,6 +10,7 @@ namespace WebApi.Entities
         public string PostsCollectionName { get; set; }
         public string UsersCollectionName { get; set; }
         public string ReviewsCollectionName { get; set; }
+        public string LocationsCollectionName { get; set; }
         public string ConnectionString { get; set; }
         public string DatabaseName { get; set; }
     }
@@ -19,6 +20,7 @@ namespace WebApi.Entities
         string PostsCollectionName { get; set; }
         string UsersCollectionName { get; set; }
         string ReviewsCollectionName { get; set; }
+        string LocationsCollectionName { get; set; }
         string ConnectionString { get; set; }
         string DatabaseName { get; set; }
     }
