@@ -10,5 +10,6 @@ namespace WebApi.Entities
         public string Role { get; set; }
         [JsonIgnore]
         public string Password { get; set; }
+        public string Avatar { get; set; }
     }
 }

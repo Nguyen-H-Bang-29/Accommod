@@ -10,6 +10,8 @@ namespace WebApi.Helpers
 {
     public abstract class Util
     {
+        public const string avatarsFolder = "Images/Avatars/";
+        public const string photosFolder = "Images/Photos/";
         public static string GetHashString(byte[] hashed)
         {
             StringBuilder sb = new StringBuilder();

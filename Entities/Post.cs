@@ -20,5 +20,6 @@ namespace WebApi.Entities
         public string WardCode { get; set; }
         public string Address { get; set; }
         public long Rent { get; set; }
+        public List<string> Photos { get; set; }
     }
 }

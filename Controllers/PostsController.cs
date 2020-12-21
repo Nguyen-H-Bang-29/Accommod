@@ -25,45 +25,6 @@ namespace WebApi.Controllers
 
         #region Host
 
-        [Authorize]
-        [HttpGet]
-        [ProducesResponseType(typeof(List<GetPostDto>), 200)]
-        [ProducesResponseType(500)]
-        public async Task<IActionResult> GetAll()
-        {
-            try
-            {
-                var result = await _postService.GetAll();
-                return Ok(result);
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e.Message);
-            }
-        }
-
-        [Authorize]
-        [HttpGet("{id}")]
-        [ProducesResponseType(typeof(GetPostDto), 200)]
-        [ProducesResponseType(500)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> Get([FromRoute] string id)
-        {
-            try
-            {
-                var result = await _postService.GetById(id);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException e)
-            {
-                return StatusCode(400, e.Message);
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e.Message);
-            }
-        }
-
         [Authorize(Role.Admin, Role.Host)]
         [HttpPost]
         [ProducesResponseType(typeof(GetPostDto), 200)]
@@ -72,7 +33,6 @@ namespace WebApi.Controllers
         public async Task<IActionResult> CreateOrUpdate(CreateOrUpdatePostDto input)
         {
             var host = (User)HttpContext.Items["User"];
-
             try
             {
                 var result = await _postService.CreateOrUpdate(input, host.Id);
@@ -88,6 +48,23 @@ namespace WebApi.Controllers
             }
         }
 
+
+        [Authorize(Role.Admin, Role.Host)]
+        [HttpPost("{id}/images")]
+        public async Task<IActionResult> Upload([FromRoute] string id)
+        {
+            var files = Request.Form.Files;
+            var result = await _postService.Upload(id, files.ToList());
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/images")]
+        public async Task<IActionResult> Download([FromRoute] string id, [FromQuery] string file)
+        {
+            var result = await _postService.Download(id, file);
+            return new FileStreamResult(result, "image/ief");
+        }
+
         [Authorize(Role.Admin, Role.Host)]
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(GetPostDto), 200)]
@@ -95,9 +72,12 @@ namespace WebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> Delete([FromRoute]string id)
         {
+            string role = HttpContext.Items["Role"].ToString();
+            var user = (User)HttpContext.Items["User"];
+
             try
             {                
-                return Ok(await _postService.Delete(id));
+                return Ok(await _postService.Delete(id, role, user.Id));
             }
             catch (KeyNotFoundException e)
             {
@@ -114,7 +94,7 @@ namespace WebApi.Controllers
         #region Admin
 
         [Authorize(Role.Admin)]
-        [HttpPut("{id}/approve")]
+        [HttpPost("{id}/approve")]
         [ProducesResponseType(typeof(GetPostDto), 200)]
         [ProducesResponseType(500)]
         [ProducesResponseType(400)]
@@ -139,7 +119,7 @@ namespace WebApi.Controllers
         }
 
         [Authorize(Role.Admin)]
-        [HttpPut("{id}/reject")]
+        [HttpPost("{id}/reject")]
         [ProducesResponseType(typeof(GetPostDto), 200)]
         [ProducesResponseType(500)]
         [ProducesResponseType(400)]
@@ -345,6 +325,30 @@ namespace WebApi.Controllers
         #endregion
 
         #region Shared
+
+        [Authorize]
+        [HttpGet("{id}")]
+        [ProducesResponseType(typeof(GetPostDto), 200)]
+        [ProducesResponseType(500)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> Get([FromRoute] string id)
+        {
+            string role = HttpContext.Items["Role"].ToString();
+            var user = (User)HttpContext.Items["User"];
+            try
+            {
+                var result = await _postService.GetById(id, role, user.Id);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
 
         [HttpPost("search")]
         [Authorize]

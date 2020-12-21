@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Microsoft.AspNetCore.Http;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -9,7 +10,7 @@ using WebApi.Entities;
 namespace WebApi.Dtos
 {
     public class CreateOrUpdatePostDto
-    {        
+    {
         [AllowNull]
         public string Id;
         public string Caption;
@@ -17,6 +18,7 @@ namespace WebApi.Dtos
         public string Address;
         public long Rent;
     }
+
     public class GetPostDto
     {
         public string Id;
@@ -44,7 +46,7 @@ namespace WebApi.Dtos
         public string ProvinceCode;
         public int PageSize = 100;
         public int Skip = 0;
-        public SortField Sort = SortField.None;        
+        public SortField Sort = SortField.None;
         public bool Desc = false;
         [AllowNull]
         public long? MinRent = 0;
@@ -61,7 +63,7 @@ namespace WebApi.Dtos
 
     public enum SortField
     {
-        None, 
+        None,
         Rent,
         Rating,
         Views
