@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using WebApi.Entities;
 using WebApi.Helpers;
 using WebApi.Models;
@@ -17,10 +18,12 @@ namespace WebApi.Services
 {
     public interface IUserService
     {
-        AuthenticateResponse Authenticate(AuthenticateRequest model);
-        AuthenticateResponse SignIn(SignInRequest model);
+        AuthenticateResponse LogIn(AuthenticateRequest model);
+        AuthenticateResponse SignUp(SignUpRequest model);
         List<User> GetAll();
         User GetById(string id);
+        Task<User> Approve(string id);
+        Task<User> Reject(string id);
     }
 
     public class UserService : IUserService
@@ -40,26 +43,27 @@ namespace WebApi.Services
             _users = Util.GetCollection<User>(database, dbSettings.UsersCollectionName);
         } 
 
-        public AuthenticateResponse SignIn(SignInRequest model)
+        public AuthenticateResponse SignUp(SignUpRequest model)
         {
             using SHA256 mySHA256 = SHA256.Create();
             var user = _users.Find(x => x.Username == model.Username).SingleOrDefault();
             if (user != null) throw new Exception(message: "Tên đăng nhập đã tồn tại");
             user = new User()
             {
-                FirstName = model.FirstName,
-                LastName = model.LastName,
+                Email = model.Email,
+                PhoneNumber = model.PhoneNumber,
                 Username = model.Username,
                 Password = Util.GetHashString(mySHA256.ComputeHash(Encoding.ASCII.GetBytes(model.Password))),
                 Role = model.Role,
-                CreatedTime = DateTime.UtcNow
+                CreatedTime = DateTime.UtcNow,
+                Status = model.Role == Role.Renter ? UserStatus.Approved : UserStatus.Pending
             };
             _users.InsertOne(user);
             var token = GenerateJwtToken(user);
             return new AuthenticateResponse(user, token);
         }
 
-        public AuthenticateResponse Authenticate(AuthenticateRequest model)
+        public AuthenticateResponse LogIn(AuthenticateRequest model)
         {
             using SHA256 mySHA256 = SHA256.Create();
             var user = _users.Find(x => x.Username == model.Username &&
@@ -75,6 +79,16 @@ namespace WebApi.Services
 
         }
 
+        public async Task<User> Approve(string id)
+        {
+            return await UpdateStatus(id, UserStatus.Approved);
+        }
+
+        public async Task<User> Reject(string id)
+        {
+            return await UpdateStatus(id, UserStatus.Rejected);
+        }
+
         public List<User> GetAll()
         {
             return _users.Find(_ => true).ToList();
@@ -86,6 +100,21 @@ namespace WebApi.Services
         }
 
         // helper methods
+        private async Task<User> UpdateStatus(string id, UserStatus status)
+        {
+            var user = _users.AsQueryable().FirstOrDefault(x => x.Id == id);
+            if (user == null)
+                throw new KeyNotFoundException("Không tồn tại bản ghi với Id được cung cấp");
+            if (user.Status != UserStatus.Pending)
+                throw new InvalidOperationException("Không thể thay đổi trạng thái bài viết sau khi đã duyệt/từ chối");
+
+            var filter = Builders<User>.Filter.Eq("Id", id);
+            var update = Builders<User>.Update.Set("Status", status);
+            await _users.UpdateOneAsync(filter, update);
+
+            user = _users.AsQueryable().FirstOrDefault(x => x.Id == id);
+            return user;
+        }
 
         private string GenerateJwtToken(User user)
         {

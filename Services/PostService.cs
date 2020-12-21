@@ -158,12 +158,13 @@ namespace WebApi.Services
                 role == Role.Host ? _users.AsQueryable().Where(u => u.Id == userId).Select(u => u.Id).ToList() :
                 new List<string>();
             List<string> wardCodes = new List<string>();
-            if (searchParam.WardCode != null) wardCodes.Add(searchParam.WardCode);
-            else if (searchParam.DistrictCode != null)
+            if (searchParam.WardCode != null && searchParam.WardCode != "") wardCodes.Add(searchParam.WardCode);
+            else if (searchParam.DistrictCode != null && searchParam.DistrictCode != "")
                 wardCodes.AddRange(_locationService.GetWardCodesByDistrict(searchParam.DistrictCode));
-            else if (searchParam.ProvinceCode != null)
+            else if (searchParam.ProvinceCode != null && searchParam.ProvinceCode != "")
                 wardCodes.AddRange(_locationService.GetWardCodesByProvince(searchParam.ProvinceCode));
 
+            wardCodes = wardCodes.Distinct().Where(c => c != "").ToList();
             var addressKeywords = searchParam.AddressKeyWord.Trim().ToLower().Split(' ').Where(e => e != "").ToArray();
             var captionKeywords = searchParam.CaptionKeyword.Trim().ToLower().Split(' ').Where(e => e != "").ToArray();
 

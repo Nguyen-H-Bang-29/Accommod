@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using WebApi.Entities;
 using WebApi.Models;
 using WebApi.Services;
@@ -18,14 +19,14 @@ namespace WebApi.Controllers
             _userService = userService;
         }
 
-        [HttpPost("authenticate")]
+        [HttpPost("login")]
         [ProducesResponseType(typeof(AuthenticateResponse), 200)]
         [ProducesResponseType(401)]
-        public IActionResult Authenticate(AuthenticateRequest model)
+        public IActionResult LogIn(AuthenticateRequest model)
         {
             try
             {
-                var response = _userService.Authenticate(model);
+                var response = _userService.LogIn(model);
                 return Ok(response);
             }
             catch (Exception e)
@@ -34,14 +35,14 @@ namespace WebApi.Controllers
             }
         }
 
-        [HttpPost("signin")]
+        [HttpPost("signup")]
         [ProducesResponseType(typeof(AuthenticateResponse), 200)]
         [ProducesResponseType(401)]
-        public IActionResult SignIn(SignInRequest model)
+        public IActionResult SignUp(SignUpRequest model)
         {
             try
             {
-                var response = _userService.SignIn(model);
+                var response = _userService.SignUp(model);
                 return Ok(response);
             }
             catch(Exception e)
@@ -66,6 +67,22 @@ namespace WebApi.Controllers
         {
             var user = _userService.GetById(id);
             return Ok(user);
+        }
+
+        [Authorize(Role.Admin)]
+        [HttpPost("{id}/approve")]
+        [ProducesResponseType(typeof(List<User>), 200)]
+        public async Task<IActionResult> Approve([FromRoute] string id)
+        {
+            return Ok(await _userService.Approve(id));
+        }
+
+        [Authorize(Role.Admin)]
+        [HttpPost("{id}/reject")]
+        [ProducesResponseType(typeof(List<User>), 200)]
+        public async Task<IActionResult> Reject([FromRoute] string id)
+        {
+            return Ok(await _userService.Reject(id));
         }
     }
 }
