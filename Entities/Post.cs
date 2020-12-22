@@ -10,7 +10,6 @@ namespace WebApi.Entities
         Pending,
         Rejected,
         Available,
-        Occupied
     }
     public class Post : EntityBase
     {

@@ -62,7 +62,6 @@ namespace WebApi.Services
             result.View = _reviewService.GetViews(post.Id);
             return result;
         }
-
         public async Task<GetPostDto> GetById(string id, string role, string userId)
         {
             PostStatus[] statuses;
@@ -70,7 +69,7 @@ namespace WebApi.Services
             {
                 case Role.Host:
                 case Role.Admin:
-                    statuses = new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Available, PostStatus.Occupied };
+                    statuses = new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Available };
                     break;
                 case Role.Renter:
                     statuses = new PostStatus[] { PostStatus.Available };
@@ -145,7 +144,7 @@ namespace WebApi.Services
             {
                 case Role.Host:
                 case Role.Admin:
-                    statuses = new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Available, PostStatus.Occupied };
+                    statuses = new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Available };
                     break;
                 case Role.Renter:
                     statuses = new PostStatus[] { PostStatus.Available };
@@ -178,47 +177,52 @@ namespace WebApi.Services
                     (captionKeywords.Count() < 1 || captionKeywords.Intersect(p.Caption.ToLower().Replace(',', ' ').Split(' ')).Count() > 0))
                 .ToList();
             IEnumerable<Post> raw = posts;
-
-            var reviews = _reviews.AsQueryable();
+            var count = posts.Count();
+            var reviews = _reviews.AsQueryable().ToList();
             switch (searchParam.Sort)
             {
                 case SortField.None:
                     raw = posts
                         .Skip(searchParam.Skip)
-                        .Take(searchParam.PageSize);
+                        .Take(searchParam.Take);
                     break;
                 case SortField.Rent:
                     raw = posts
-                        .OrderBy(p => p.Rent)
-                        .Skip(searchParam.Skip)
-                        .Take(searchParam.PageSize);
+                        .OrderBy(p => p.Rent);
+                    if (searchParam.Desc && searchParam.Sort != SortField.None) raw = raw.Reverse();
+                    raw = raw
+                   .Skip(searchParam.Skip)
+                        .Take(searchParam.Take);
                     break;
                 case SortField.Rating:
                     raw =
                         (from p in posts
                          join r in reviews on p.Id equals r.PostId into jo
-                         orderby jo.Average(j => j.Rating) descending
-                         select p)
-                        .Skip(searchParam.Skip)
-                        .Take(searchParam.PageSize);
+                         orderby GetRating(jo)
+                         select p);
+                    if (searchParam.Desc && searchParam.Sort != SortField.None) raw = raw.Reverse();
+                    raw = raw
+                   .Skip(searchParam.Skip)
+                        .Take(searchParam.Take);
                     break;
                 case SortField.Views:
                     raw =
                         (from p in posts
                          join r in reviews on p.Id equals r.PostId into jo
-                         orderby jo.Count(j => j.Viewed) descending
-                         select p)
-                        .Skip(searchParam.Skip)
-                        .Take(searchParam.PageSize);
+                         orderby GetViews(jo)
+                         select p);
+                    if (searchParam.Desc && searchParam.Sort != SortField.None) raw = raw.Reverse();
+                    raw = raw
+                   .Skip(searchParam.Skip)
+                   .Take(searchParam.Take);
                     break;
             }
-            if (searchParam.Desc && searchParam.Sort != SortField.None) raw = raw.Reverse();
             var result = raw.Select(p => Map(p)).ToList();
             return new SearchResultPostDto()
             {
                 Result = result,
-                Count = result.Count,
-                StartIndex = searchParam.Skip
+                Count = count,
+                StartIndex = searchParam.Skip,
             };
         }
 
@@ -226,20 +230,20 @@ namespace WebApi.Services
         {
             var post = _posts.Find(p => p.Id == id).FirstOrDefault();
             if (post == null) throw new KeyNotFoundException("Không tồn tại bản ghi với Id được cung cấp");
-           
+
             var folder = Path.Combine(Util.photosFolder, id + "/");
 
             List<string> photos = post.Photos;
             foreach (var image in files)
             {
-                var title = image.Name + "." + image.FileName.Split('.').LastOrDefault();               
+                var title = image.Name + "." + image.FileName.Split('.').LastOrDefault();
                 if (!Regex.IsMatch(title, @"^[\w\-. ]+$")) throw new ArgumentException("Tên file được cung cấp không đúng chuẩn");
                 Stream s = FileSystemService.GetOrCreateFile(folder, title);
                 if (image.Length > 0) await image.CopyToAsync(s);
                 s.Close();
                 photos.Add(title);
             }
-            
+
             var filter = Builders<Post>.Filter.Eq("Id", id);
             var update = Builders<Post>.Update.Set(p => p.Photos, photos.Distinct().ToList());
             await _posts.UpdateOneAsync(filter, update);
@@ -250,7 +254,7 @@ namespace WebApi.Services
         public async Task<Stream> Download(string postId, string fileName)
         {
             var folder = Path.Combine(Util.photosFolder, postId + "/");
-            return FileSystemService.GetFile(folder, fileName);          
+            return FileSystemService.GetFile(folder, fileName);
         }
         #endregion
 
@@ -272,6 +276,17 @@ namespace WebApi.Services
             return Map(post);
         }
 
+        private double GetRating(IEnumerable<Review> reviews)
+        {
+            if (reviews.Count() == 0) return 0;
+            return reviews.Average(r => r.Rating);
+        }
+
+        private int GetViews(IEnumerable<Review> reviews)
+        {
+            if (reviews.Count() == 0) return 0;
+            return reviews.Count(r => r.Viewed);
+        }
         #endregion
 
     }

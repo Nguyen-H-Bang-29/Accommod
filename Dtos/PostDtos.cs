@@ -44,7 +44,7 @@ namespace WebApi.Dtos
         public string DistrictCode;
         [AllowNull]
         public string ProvinceCode;
-        public int PageSize = 100;
+        public int Take = 100;
         public int Skip = 0;
         public SortField Sort = SortField.None;
         public bool Desc = false;
@@ -59,6 +59,7 @@ namespace WebApi.Dtos
         public List<GetPostDto> Result;
         public int Count;
         public int StartIndex;
+        public int Total;
     }
 
     public enum SortField
