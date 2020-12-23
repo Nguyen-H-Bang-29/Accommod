@@ -55,9 +55,11 @@ namespace WebApi.Services
         public int GetViews(string postId)
         {
             if (_posts.AsQueryable().FirstOrDefault(p => p.Id == postId) == null) throw new KeyNotFoundException("Không tìm thấy bài đăng");
-            return _reviews.AsQueryable()
-                .Where(r => r.PostId == postId && r.Viewed)
-                .Count();
+            var reviews = _reviews.AsQueryable()
+                .Where(r => r.PostId == postId && r.Viewed);
+            if (reviews.Count() > 0) return reviews
+                 .Count();
+            return 0;
         }
 
         public int GetReports(string postId)

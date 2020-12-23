@@ -9,7 +9,7 @@ namespace WebApi.Entities
     {
         Pending,
         Rejected,
-        Available,
+        Approved,
     }
     public class Post : EntityBase
     {
@@ -20,5 +20,7 @@ namespace WebApi.Entities
         public string Address { get; set; }
         public long Rent { get; set; }
         public List<string> Photos { get; set; }
+        public string Description { get; set; }
+        public double Area { get; set; }
     }
 }

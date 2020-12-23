@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebApi.Dtos;
 using WebApi.Entities;
+using WebApi.Helpers;
 using WebApi.Services;
 
 namespace WebApi.Controllers
@@ -17,10 +19,13 @@ namespace WebApi.Controllers
         private readonly IPostService _postService;
         private readonly IReviewService _reviewService;
 
-        public PostsController(IPostService postService, IReviewService reviewService)
+        private readonly IHubContext<NotiHub> _hub;
+        public PostsController(IPostService postService, IReviewService reviewService, IHubContext<NotiHub> hub)
         {
             _postService = postService;
             _reviewService = reviewService;
+
+            _hub = hub;
         }
 
         #region Host
@@ -358,6 +363,7 @@ namespace WebApi.Controllers
         {
             string role = HttpContext.Items["Role"].ToString();
             var user = (User)HttpContext.Items["User"];
+            
             try
             {
                 return Ok(await _postService.Search(searchParam, role, user.Id));

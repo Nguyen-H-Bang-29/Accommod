@@ -41,6 +41,7 @@ namespace WebApi
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<ILocationService, LocationService>();
+            services.AddScoped<INotificationService, NotificationService>();
 
             // swagger
             services.AddSwaggerGen();
@@ -57,7 +58,7 @@ namespace WebApi
             });
             IMapper mapper = mapperConfig.CreateMapper();
             services.AddSingleton(mapper);
-
+            services.AddSignalR();
         }
 
         // configure the HTTP request pipeline
@@ -72,9 +73,10 @@ namespace WebApi
 
             // global cors policy
             app.UseCors(x => x
-                .AllowAnyOrigin()
+                .SetIsOriginAllowed(_ => true)
                 .AllowAnyMethod()
-                .AllowAnyHeader());
+                .AllowAnyHeader()
+                .AllowCredentials());
 
             // custom jwt auth middleware
             app.UseMiddleware<JwtMiddleware>();
@@ -82,6 +84,7 @@ namespace WebApi
             app.UseEndpoints(endpoint =>
             {
                 endpoint.MapControllers();
+                endpoint.MapHub<NotiHub>("/notiHub");
             });
         }
     }

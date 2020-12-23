@@ -15,6 +15,7 @@ namespace WebApi.Helpers
         {
             CreateMap<Post, GetPostDto>();
             CreateMap<Review, GetReviewDto>();
+            CreateMap<User, HostDto>();
         }
     }
 }

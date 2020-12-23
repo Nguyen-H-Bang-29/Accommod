@@ -11,6 +11,7 @@ namespace WebApi.Entities
         public string UsersCollectionName { get; set; }
         public string ReviewsCollectionName { get; set; }
         public string LocationsCollectionName { get; set; }
+        public string NotificationsCollectionName { get; set; }
         public string ConnectionString { get; set; }
         public string DatabaseName { get; set; }
     }
@@ -21,6 +22,7 @@ namespace WebApi.Entities
         string UsersCollectionName { get; set; }
         string ReviewsCollectionName { get; set; }
         string LocationsCollectionName { get; set; }
+        string NotificationsCollectionName { get; set; }
         string ConnectionString { get; set; }
         string DatabaseName { get; set; }
     }

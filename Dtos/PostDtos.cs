@@ -17,19 +17,24 @@ namespace WebApi.Dtos
         public string WardCode;
         public string Address;
         public long Rent;
+        public double Area;
+        public string Description;
     }
 
     public class GetPostDto
     {
         public string Id;
         public string Caption;
-        public string HostId;
+        public HostDto Host;
         public PostStatus Status;
         public WardDto Ward;
         public string Address;
         public long Rent;
-        public int View;
+        public int Views;
         public double Rating;
+        public List<string> Photos;
+        public double Area;
+        public string Description;
     }
 
     public class SearchPostDto
@@ -45,13 +50,14 @@ namespace WebApi.Dtos
         [AllowNull]
         public string ProvinceCode;
         public int Take = 100;
-        public int Skip = 0;
+        public int Skip = 0; 
         public SortField Sort = SortField.None;
         public bool Desc = false;
         [AllowNull]
         public long? MinRent = 0;
         [AllowNull]
         public long? MaxRent = long.MaxValue;
+        public bool ShowRejected = true;
     }
 
     public class SearchResultPostDto

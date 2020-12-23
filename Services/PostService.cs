@@ -37,7 +37,8 @@ namespace WebApi.Services
 
         private readonly ILocationService _locationService;
         private readonly IReviewService _reviewService;
-        public PostService(IAccommodDatabaseSettings settings, IMapper mapper, ILocationService locationService, IReviewService reviewService)
+        private readonly INotificationService _notificationService;
+        public PostService(IAccommodDatabaseSettings settings, IMapper mapper, ILocationService locationService, IReviewService reviewService, INotificationService notificationService)
         {
             _mapper = mapper;
 
@@ -51,6 +52,7 @@ namespace WebApi.Services
 
             _locationService = locationService;
             _reviewService = reviewService;
+            _notificationService = notificationService;
         }
 
         #region CRUDAR
@@ -58,8 +60,11 @@ namespace WebApi.Services
         {
             var result = _mapper.Map<GetPostDto>(post);
             result.Ward = _locationService.GetWard(post.WardCode);
-            result.Rating = _reviewService.GetRating(post.Id);
-            result.View = _reviewService.GetViews(post.Id);
+            var reviews = _reviews.AsQueryable().Where(r => r.PostId == post.Id);
+            result.Rating = GetRating(reviews);
+            result.Views = GetViews(reviews);
+            var host = _users.Find(h => h.Id == post.HostId).FirstOrDefault();
+            result.Host = _mapper.Map<HostDto>(host);
             return result;
         }
         public async Task<GetPostDto> GetById(string id, string role, string userId)
@@ -69,10 +74,10 @@ namespace WebApi.Services
             {
                 case Role.Host:
                 case Role.Admin:
-                    statuses = new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Available };
+                    statuses = new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Approved };
                     break;
                 case Role.Renter:
-                    statuses = new PostStatus[] { PostStatus.Available };
+                    statuses = new PostStatus[] { PostStatus.Approved };
                     break;
                 default:
                     statuses = new PostStatus[] { };
@@ -96,13 +101,16 @@ namespace WebApi.Services
                 Id = input.Id,
                 Caption = input.Caption,
                 HostId = hostId,
-                Status = _users.AsQueryable().FirstOrDefault(u => u.Id == hostId).Role == Role.Admin ? PostStatus.Available : PostStatus.Pending,
+                Status = _users.AsQueryable().FirstOrDefault(u => u.Id == hostId).Role == Role.Admin ? PostStatus.Approved : PostStatus.Pending,
                 WardCode = input.WardCode,
                 Address = input.Address,
-                Rent = input.Rent
+                Rent = input.Rent,
+                Area = input.Area,
+                Description = input.Description,
             };
             if (input.Id == null || input.Id == "")
             {
+                post.Photos = new List<string>();
                 post.CreatedTime = DateTime.UtcNow;
                 await _posts.InsertOneAsync(post);
             }
@@ -121,7 +129,7 @@ namespace WebApi.Services
             List<string> userIds =
                 role == Role.Host ? _users.AsQueryable().Where(u => u.Id == userId).Select(u => u.Id).ToList() :
                 new List<string>();
-            var filter = Builders<Post>.Filter.Where(p => (userIds.Count() < 1 || userIds.Contains(p.HostId)) && p.Id == id);
+            var filter = Builders<Post>.Filter.Where(p => p.Id == id);
             var post = await _posts.FindOneAndDeleteAsync(filter);
             if (post == null) throw new KeyNotFoundException("Không tồn tại bản ghi với Id được cung cấp");
             return Map(post);
@@ -129,7 +137,7 @@ namespace WebApi.Services
 
         public async Task<GetPostDto> Approve(string id)
         {
-            return await UpdateStatus(id, PostStatus.Available);
+            return await UpdateStatus(id, PostStatus.Approved);
         }
 
         public async Task<GetPostDto> Reject(string id)
@@ -144,15 +152,17 @@ namespace WebApi.Services
             {
                 case Role.Host:
                 case Role.Admin:
-                    statuses = new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Available };
+                    statuses = searchParam.ShowRejected ? new PostStatus[] { PostStatus.Pending, PostStatus.Rejected, PostStatus.Approved }
+                    : new PostStatus[] { PostStatus.Pending, PostStatus.Approved };
                     break;
                 case Role.Renter:
-                    statuses = new PostStatus[] { PostStatus.Available };
+                    statuses = new PostStatus[] { PostStatus.Approved };
                     break;
                 default:
                     statuses = new PostStatus[] { };
                     break;
             }
+
             List<string> userIds =
                 role == Role.Host ? _users.AsQueryable().Where(u => u.Id == userId).Select(u => u.Id).ToList() :
                 new List<string>();
@@ -189,7 +199,7 @@ namespace WebApi.Services
                 case SortField.Rent:
                     raw = posts
                         .OrderBy(p => p.Rent);
-                    if (searchParam.Desc && searchParam.Sort != SortField.None) raw = raw.Reverse();
+                    if (searchParam.Desc) raw = raw.Reverse();
                     raw = raw
                    .Skip(searchParam.Skip)
                         .Take(searchParam.Take);
@@ -200,7 +210,7 @@ namespace WebApi.Services
                          join r in reviews on p.Id equals r.PostId into jo
                          orderby GetRating(jo)
                          select p);
-                    if (searchParam.Desc && searchParam.Sort != SortField.None) raw = raw.Reverse();
+                    if (searchParam.Desc) raw = raw.Reverse();
                     raw = raw
                    .Skip(searchParam.Skip)
                         .Take(searchParam.Take);
@@ -211,7 +221,7 @@ namespace WebApi.Services
                          join r in reviews on p.Id equals r.PostId into jo
                          orderby GetViews(jo)
                          select p);
-                    if (searchParam.Desc && searchParam.Sort != SortField.None) raw = raw.Reverse();
+                    if (searchParam.Desc) raw = raw.Reverse();
                     raw = raw
                    .Skip(searchParam.Skip)
                    .Take(searchParam.Take);
@@ -265,15 +275,33 @@ namespace WebApi.Services
             var post = _posts.AsQueryable().FirstOrDefault(x => x.Id == id);
             if (post == null)
                 throw new KeyNotFoundException("Không tồn tại bản ghi với Id được cung cấp");
-            if (post.Status != PostStatus.Pending)
-                throw new InvalidOperationException("Không thể thay đổi trạng thái bài viết sau khi đã duyệt/từ chối");
+            if (post.Status == PostStatus.Approved)
+                throw new InvalidOperationException("Không thể thay đổi trạng thái bài viết sau khi đã duyệt");
 
             var filter = Builders<Post>.Filter.Eq("Id", id);
             var update = Builders<Post>.Update.Set("Status", status);
             await _posts.UpdateOneAsync(filter, update);
 
             post = _posts.AsQueryable().FirstOrDefault(x => x.Id == id);
-            return Map(post);
+            var dto = Map(post);
+            if (status == PostStatus.Approved) await _notificationService.Add(new Notification()
+            {
+                Post = dto,
+                UserId = post.HostId,
+                Content = "Đã được phê duyệt",
+                Success = true,
+                CreatedTime = DateTime.UtcNow
+            });
+            else
+            if (status == PostStatus.Rejected) await _notificationService.Add(new Notification()
+            {
+                Post = dto,
+                UserId = post.HostId,
+                Content = "Đã bị từ chối",
+                CreatedTime = DateTime.UtcNow,
+                Success = false
+            });
+            return dto;
         }
 
         private double GetRating(IEnumerable<Review> reviews)
