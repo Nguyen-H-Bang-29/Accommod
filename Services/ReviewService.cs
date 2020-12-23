@@ -136,7 +136,7 @@ namespace WebApi.Services
         }
         public async Task<List<Post>> GetFavorites(string userId)
         {
-            var postIds = _reviews.AsQueryable().Where(r => r.UserId == userId).Where(r => r.IsFavorite).Select(r => r.PostId);
+            var postIds = _reviews.AsQueryable().Where(r => r.UserId == userId).Where(r => r.IsFavorite).Select(r => r.PostId).ToList();
             var posts = _posts.AsQueryable().Where(p => postIds.Contains(p.Id));
             return posts.ToList();
         }

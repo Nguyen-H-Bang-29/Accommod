@@ -41,7 +41,7 @@ namespace WebApi
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<ILocationService, LocationService>();
-            services.AddScoped<INotificationService, NotificationService>();           
+            services.AddScoped<INotificationService, NotificationService>();
 
             // swagger
             services.AddSwaggerGen();
@@ -73,11 +73,9 @@ namespace WebApi
 
             // global cors policy
             app.UseCors(x => x
-                .SetIsOriginAllowed(_ => true)
+                .AllowAnyOrigin()
                 .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials());
-
+                .AllowAnyHeader());
             // custom jwt auth middleware
             app.UseMiddleware<JwtMiddleware>();
 

@@ -333,7 +333,7 @@ namespace WebApi.Controllers
             var user = (User)HttpContext.Items["User"];
             try
             {
-                return Ok(_reviewService.GetFavorites(user.Id));
+                return Ok(await _reviewService.GetFavorites(user.Id));
             }
             catch (KeyNotFoundException e)
             {
@@ -351,7 +351,7 @@ namespace WebApi.Controllers
             var user = (User)HttpContext.Items["User"];
             try
             {
-                return Ok(_reviewService.AddFavorite(id, user.Id));
+                return Ok(await _reviewService.AddFavorite(id, user.Id));
             }
             catch (KeyNotFoundException e)
             {
@@ -369,7 +369,7 @@ namespace WebApi.Controllers
             var user = (User)HttpContext.Items["User"];
             try
             {
-                return Ok(_reviewService.RemoveFavorite(id, user.Id));
+                return Ok(await _reviewService.RemoveFavorite(id, user.Id));
             }
             catch (KeyNotFoundException e)
             {

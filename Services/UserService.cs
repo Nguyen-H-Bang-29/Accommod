@@ -77,6 +77,7 @@ namespace WebApi.Services
 
             // return null if user not found
             if (user == null) throw new Exception(message: "Tên đăng nhập hoặc mật khẩu không chính xác");
+            if (user.Status != UserStatus.Approved) throw new Exception("Tài khoản của bạn chưa được admin chấp thuận hoặc đã từ chối. Xin liên hệ lại với công ty cung cấp dịch vụ");
 
             // authentication successful so generate jwt token
             var token = GenerateJwtToken(user);
@@ -111,8 +112,8 @@ namespace WebApi.Services
             var user = _users.AsQueryable().FirstOrDefault(x => x.Id == id);
             if (user == null)
                 throw new KeyNotFoundException("Không tồn tại bản ghi với Id được cung cấp");
-            if (user.Status != UserStatus.Pending)
-                throw new InvalidOperationException("Không thể thay đổi trạng thái bài viết sau khi đã duyệt/từ chối");
+            if (user.Status == UserStatus.Approved)
+                throw new InvalidOperationException("Không thể thay đổi trạng thái bài viết sau khi đã duyệt");
 
             var filter = Builders<User>.Filter.Eq("Id", id);
             var update = Builders<User>.Update.Set("Status", status);

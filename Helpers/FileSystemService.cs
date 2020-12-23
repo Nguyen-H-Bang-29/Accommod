@@ -12,11 +12,13 @@ namespace WebApi.Helpers
     {
         public static string GetOrCreateDirectory(string path)
         {
-            return Directory.Exists(path) ? path : Directory.CreateDirectory(path).Name;
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            return path;
         }
         public static Stream GetOrCreateFile(string directory, string path)
         {
-            string fullPath = Path.Combine(GetOrCreateDirectory(directory), path);
+            var folder = GetOrCreateDirectory(directory);
+            string fullPath = Path.Combine(folder, path);
             return File.Exists(fullPath) ? File.Open(fullPath, FileMode.OpenOrCreate) : File.Create(fullPath);
         }
         public static List<string> GetFileNames(string directory)
