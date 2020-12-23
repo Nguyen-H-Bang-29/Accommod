@@ -248,12 +248,11 @@ namespace WebApi.Services
             List<string> photos = post.Photos;
             foreach (var image in files)
             {
-                var title = image.Name + "." + image.FileName.Split('.').LastOrDefault();
-                if (!Regex.IsMatch(title, @"^[\w\-. ]+$")) throw new ArgumentException("Tên file được cung cấp không đúng chuẩn");
-                Stream s = FileSystemService.GetOrCreateFile(folder, title);
+                if (!Regex.IsMatch(image.FileName, @"^[\w\-. ]+$")) throw new ArgumentException("Tên file được cung cấp không đúng chuẩn");
+                Stream s = FileSystemService.GetOrCreateFile(folder, image.FileName);
                 if (image.Length > 0) await image.CopyToAsync(s);
                 s.Close();
-                photos.Add(title);
+                photos.Add(image.FileName);
             }
 
             var filter = Builders<Post>.Filter.Eq("Id", id);

@@ -144,12 +144,10 @@ namespace WebApi.Services
             UserStatus[] statuses = searchParam.ShowRejected ? new UserStatus[] { UserStatus.Pending, UserStatus.Rejected, UserStatus.Approved }
                     : new UserStatus[] { UserStatus.Pending, UserStatus.Approved };                           
 
-            var Keywords = searchParam.Keyword.Trim().ToLower().Split(' ').Where(e => e != "").ToArray();
-
             List<User> users = _users.AsQueryable()
                 .Where(p => statuses.Contains(p.Status)).ToList()
                 .Where(p =>
-                    (Keywords.Count() < 1 || Keywords.Intersect(p.Username.ToLower().Replace(',', ' ').Split(' ')).Count() > 0) )
+                    p.Username.Contains(searchParam.Keyword))
                 .ToList();
             IEnumerable<User> raw = users;
             var count = users.Count();
