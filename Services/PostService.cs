@@ -163,6 +163,8 @@ namespace WebApi.Services
                     break;
             }
 
+            if (searchParam.MinRent == null) searchParam.MinRent = 0;
+            if (searchParam.MaxRent == null) searchParam.MaxRent = long.MaxValue;
             List<string> userIds =
                 role == Role.Host ? _users.AsQueryable().Where(u => u.Id == userId).Select(u => u.Id).ToList() :
                 new List<string>();
