@@ -10,7 +10,6 @@ namespace WebApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    [Authorize]
     public class LocationsController : ControllerBase
     {
         private readonly ILocationService _locationService;
