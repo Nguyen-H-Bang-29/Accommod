@@ -327,7 +327,6 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize(Role.Renter)]
         [HttpGet("favorite")]
         public async Task<IActionResult> GetFavorites()
         {
@@ -346,8 +345,7 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize(Role.Renter)]
-        [HttpGet("{id}/favorite")]
+        [HttpPost("{id}/favorite")]
         public async Task<IActionResult> AddFavorite([FromRoute] string id)
         {
             var user = (User)HttpContext.Items["User"];
@@ -365,7 +363,6 @@ namespace WebApi.Controllers
             }
         }
 
-        [Authorize(Role.Renter)]
         [HttpDelete("{id}/favorite")]
         public async Task<IActionResult> RemoveFavorite([FromRoute] string id)
         {
