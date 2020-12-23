@@ -18,10 +18,14 @@ namespace WebApi.Services
         public Task<GetReviewDto> Rate(string postId, string userId, int star);
         public Task<GetReviewDto> Report(string postId, string userId);
         public Task<GetReviewDto> Comment(string postId, string userId, string content);
+        public Task<GetReviewDto> AddFavorite(string postId, string userId);
+        public Task<GetReviewDto> RemoveFavorite(string postId, string userId);
+
         public double GetRating(string postId);
         public int GetViews(string postId);
         public int GetReports(string postId);
         public Task<List<Comment>> GetComments(string postId);
+        public Task<List<Post>> GetFavorites(string userId);
     }
     public class ReviewService : IReviewService
     {
@@ -29,6 +33,7 @@ namespace WebApi.Services
         private readonly IMongoCollection<Post> _posts;
         private readonly IMongoCollection<User> _users;
         private readonly IMongoCollection<Review> _reviews;
+
         public ReviewService(IAccommodDatabaseSettings settings, IMapper mapper)
         {
             _mapper = mapper;
@@ -115,6 +120,26 @@ namespace WebApi.Services
             return _mapper.Map<GetReviewDto>(await Update(review));
         }
 
+        public async Task<GetReviewDto> AddFavorite(string postId, string userId)
+        {
+            if (_posts.AsQueryable().FirstOrDefault(p => p.Id == postId) == null) throw new KeyNotFoundException("Không tìm thấy bài đăng");
+            var review = await Get(postId, userId);
+            review.IsFavorite = true;
+            return _mapper.Map<GetReviewDto>(await Update(review));
+        }
+        public async Task<GetReviewDto> RemoveFavorite(string postId, string userId)
+        {
+            if (_posts.AsQueryable().FirstOrDefault(p => p.Id == postId) == null) throw new KeyNotFoundException("Không tìm thấy bài đăng");
+            var review = await Get(postId, userId);
+            review.IsFavorite = false;
+            return _mapper.Map<GetReviewDto>(await Update(review));
+        }
+        public async Task<List<Post>> GetFavorites(string userId)
+        {
+            var postIds = _reviews.AsQueryable().Where(r => r.UserId == userId).Where(r => r.IsFavorite).Select(r => r.PostId);
+            var posts = _posts.AsQueryable().Where(p => postIds.Contains(p.Id));
+            return posts.ToList();
+        }
 
         #endregion
 
@@ -133,7 +158,8 @@ namespace WebApi.Services
                     Comments = new List<Comment>(),
                     Rating = 0,
                     Reported = false,
-                    Viewed = false
+                    Viewed = false,
+                    IsFavorite = false
                 };
                 await _reviews.InsertOneAsync(review);
             }
@@ -148,10 +174,13 @@ namespace WebApi.Services
             review.Rating = input.Rating;
             review.Viewed = input.Viewed;
             review.Comments = input.Comments;
+            review.IsFavorite = input.IsFavorite;
             review = await _reviews.FindOneAndReplaceAsync(
                 r => r.PostId == input.PostId && r.UserId == input.UserId, review);
             return await Get(review.PostId, review.UserId);
         }
+
+
         #endregion
 
     }

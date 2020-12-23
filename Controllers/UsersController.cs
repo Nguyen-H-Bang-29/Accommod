@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using WebApi.Dtos;
 using WebApi.Entities;
 using WebApi.Models;
 using WebApi.Services;
@@ -83,6 +84,22 @@ namespace WebApi.Controllers
         public async Task<IActionResult> Reject([FromRoute] string id)
         {
             return Ok(await _userService.Reject(id));
+        }
+
+        [HttpPost("search")]
+        [Authorize]
+        [ProducesResponseType(typeof(SearchResultUserDto), 200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Search([FromBody] SearchUserDto searchParam)
+        {
+            try
+            {
+                return Ok(await _userService.Search(searchParam));
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
         }
     }
 }

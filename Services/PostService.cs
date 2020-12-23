@@ -193,12 +193,12 @@ namespace WebApi.Services
             var reviews = _reviews.AsQueryable().ToList();
             switch (searchParam.Sort)
             {
-                case SortField.None:
+                case PostSortField.None:
                     raw = posts
                         .Skip(searchParam.Skip)
                         .Take(searchParam.Take);
                     break;
-                case SortField.Rent:
+                case PostSortField.Rent:
                     raw = posts
                         .OrderBy(p => p.Rent);
                     if (searchParam.Desc) raw = raw.Reverse();
@@ -206,7 +206,7 @@ namespace WebApi.Services
                    .Skip(searchParam.Skip)
                         .Take(searchParam.Take);
                     break;
-                case SortField.Rating:
+                case PostSortField.Rating:
                     raw =
                         (from p in posts
                          join r in reviews on p.Id equals r.PostId into jo
@@ -217,7 +217,7 @@ namespace WebApi.Services
                    .Skip(searchParam.Skip)
                         .Take(searchParam.Take);
                     break;
-                case SortField.Views:
+                case PostSortField.Views:
                     raw =
                         (from p in posts
                          join r in reviews on p.Id equals r.PostId into jo

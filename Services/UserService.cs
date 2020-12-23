@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using AutoMapper;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -10,6 +11,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using WebApi.Dtos;
 using WebApi.Entities;
 using WebApi.Helpers;
 using WebApi.Models;
@@ -24,6 +26,8 @@ namespace WebApi.Services
         User GetById(string id);
         Task<User> Approve(string id);
         Task<User> Reject(string id);
+        public Task<SearchResultUserDto> Search(SearchUserDto searchParam);
+
     }
 
     public class UserService : IUserService
@@ -32,8 +36,9 @@ namespace WebApi.Services
         private readonly IMongoCollection<User> _users; 
 
         private readonly AppSettings _appSettings;
+        private readonly IMapper _mapper;
 
-        public UserService(IOptions<AppSettings> appSettings, IAccommodDatabaseSettings dbSettings)
+        public UserService(IOptions<AppSettings> appSettings, IAccommodDatabaseSettings dbSettings, IMapper mapper)
         {
             _appSettings = appSettings.Value;
 
@@ -41,6 +46,7 @@ namespace WebApi.Services
             var database = client.GetDatabase(dbSettings.DatabaseName);
 
             _users = Util.GetCollection<User>(database, dbSettings.UsersCollectionName);
+            _mapper = mapper;
         } 
 
         public AuthenticateResponse SignUp(SignUpRequest model)
@@ -133,5 +139,30 @@ namespace WebApi.Services
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+        public async Task<SearchResultUserDto> Search(SearchUserDto searchParam)
+        {
+            UserStatus[] statuses = searchParam.ShowRejected ? new UserStatus[] { UserStatus.Pending, UserStatus.Rejected, UserStatus.Approved }
+                    : new UserStatus[] { UserStatus.Pending, UserStatus.Approved };                           
+
+            var Keywords = searchParam.Keyword.Trim().ToLower().Split(' ').Where(e => e != "").ToArray();
+
+            List<User> users = _users.AsQueryable()
+                .Where(p => statuses.Contains(p.Status)).ToList()
+                .Where(p =>
+                    (Keywords.Count() < 1 || Keywords.Intersect(p.Username.ToLower().Replace(',', ' ').Split(' ')).Count() > 0) )
+                .ToList();
+            IEnumerable<User> raw = users;
+            var count = users.Count();
+           
+            var result = raw.Skip(searchParam.Skip)
+                        .Take(searchParam.Take).Select(p => _mapper.Map<HostDto>(p)).ToList();
+            return new SearchResultUserDto()
+            {
+                Result = result,
+                Count = count,
+                StartIndex = searchParam.Skip,
+            };
+        }
+
     }
 }

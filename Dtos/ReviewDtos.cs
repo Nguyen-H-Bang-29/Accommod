@@ -15,5 +15,6 @@ namespace WebApi.Dtos
         public bool Reported;
         public int Rating;
         public List<Comment> Comments;
+        public bool IsFavorite;
     }
 }

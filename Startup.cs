@@ -41,7 +41,7 @@ namespace WebApi
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<ILocationService, LocationService>();
-            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<INotificationService, NotificationService>();           
 
             // swagger
             services.AddSwaggerGen();

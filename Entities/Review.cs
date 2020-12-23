@@ -13,5 +13,6 @@ namespace WebApi.Entities
         public bool Reported { get; set; }
         public int Rating { get; set; }
         public List<Comment> Comments { get; set; }
+        public bool IsFavorite { get; set; }
     }
 }

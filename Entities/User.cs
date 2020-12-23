@@ -10,12 +10,13 @@ namespace WebApi.Entities
         public string Password { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
-        public UserStatus Status { get; set; } 
+        public UserStatus Status { get; set; }
     }
     public enum UserStatus
     {
-        Pending, 
-        Approved,
-        Rejected
+        Pending,
+        Rejected,
+        Approved
+
     }
 }

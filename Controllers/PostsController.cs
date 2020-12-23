@@ -327,6 +327,62 @@ namespace WebApi.Controllers
             }
         }
 
+        [Authorize(Role.Renter)]
+        [HttpGet("favorite")]
+        public async Task<IActionResult> GetFavorites()
+        {
+            var user = (User)HttpContext.Items["User"];
+            try
+            {
+                return Ok(_reviewService.GetFavorites(user.Id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpGet("{id}/favorite")]
+        public async Task<IActionResult> AddFavorite([FromRoute] string id)
+        {
+            var user = (User)HttpContext.Items["User"];
+            try
+            {
+                return Ok(_reviewService.AddFavorite(id, user.Id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
+
+        [Authorize(Role.Renter)]
+        [HttpDelete("{id}/favorite")]
+        public async Task<IActionResult> RemoveFavorite([FromRoute] string id)
+        {
+            var user = (User)HttpContext.Items["User"];
+            try
+            {
+                return Ok(_reviewService.RemoveFavorite(id, user.Id));
+            }
+            catch (KeyNotFoundException e)
+            {
+                return StatusCode(400, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
         #endregion
 
         #region Shared
