@@ -1,5 +1,19 @@
-# aspnet-core-3-jwt-authentication-api
+# Accommod
 
-ASP.NET Core 3.1 - JWT Authentication API
+ASP.NET Core 3.1 - MongoDB with C# Driver
 
-For documentation and instructions check out https://jasonwatmore.com/post/2019/10/11/aspnet-core-3-jwt-authentication-tutorial-with-example-api
+## Main features:
+- Authentication and Authorization
+  + Users binded by an one-to-one relationship with three roles (Host, Admin, Renter).
+  + JWT authentication with middleware.
+  + Serverside authorization.
+- Search (serverside pagination, filters) as All Roles
+  + Locations
+  + Rent 
+  + Size
+- CRUD posts as a Host
+  + Notification
+  + Chat (upcoming)
+- CRUD and Approve/Reject as Admin
+- Comment/Review as Renter
+
